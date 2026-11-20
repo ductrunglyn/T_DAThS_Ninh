@@ -1,0 +1,17 @@
+# Môi trường đã dùng để chạy toàn bộ thực nghiệm: conda env "MTL", Python 3.10.20, GPU RTX 5090 (CUDA 12.8).
+# Cài:  pip install -r requirements.txt   (torch: chọn bản phù hợp CUDA của máy tại https://pytorch.org)
+numpy==1.26.4
+pandas==2.3.2
+scikit-learn==1.7.2
+xgboost==3.2.0
+torch==2.8.0
+matplotlib==3.10.6
+PyYAML==6.0.2
+joblib==1.5.2
+# chạy notebook tự động (experiments/run_experiments.py)
+nbformat==5.11.1
+nbclient==0.11.0
+ipykernel==6.20.2
+# kiểm thử
+pytest==9.1.1
+openpyxl==3.1.5        # chỉ để đối chiếu file .xlsx gốc với .csv trong tests/test_data_consistency.py

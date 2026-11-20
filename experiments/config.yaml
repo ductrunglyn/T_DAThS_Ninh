@@ -1,0 +1,116 @@
+# Cấu hình DUY NHẤT cho toàn bộ hệ thống thực nghiệm (dữ liệu, chia tập, mô hình, đánh giá).
+# Mọi notebook và experiments/run_experiments.py đều đọc file này qua src.utils.load_config().
+
+dataset_version: v1          # bộ dữ liệu đóng băng dùng cho mọi mô hình (data/frozen/v1)
+
+period:
+  start: 2019-01-01
+  end: 2026-08-12            # bỏ 13/08/2026 (số giờ phát điện = 0 ở cả hai hồ)
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  results: results
+
+files:
+  cuadat: vanhanh_cuadat_2019-2026.csv
+  huana: Vanhanh_huaNa_2019-2026.csv
+  rain: CHIRPS_FINAL_2VUNG_1986_2026_FORECAST.csv
+
+# ---------------------------------------------------------------- dữ liệu
+quality:
+  cd_level_outlier: 120       # m; mực nước Cửa Đạt > 120 m là ngoại lai (đặt thiếu)
+  repeat_min: 5               # đoạn giá trị Q đến Hủa Na không đổi ≥ 5 ngày → cờ lặp
+  sawtooth_jump: 0.30         # tăng/giảm > 30 % rồi đảo chiều ngày sau
+  spill_threshold: 50         # m³/s; Q tràn Hủa Na > 50 → đang xả lũ
+
+imputation:
+  gap_candidates: [1, 3, 7]   # ngưỡng khoảng thiếu tối đa được điền nhân quả; chọn bằng CV
+  default_gap: 7
+  max_window: 30              # cửa sổ dùng để xét mẫu chạm khoảng thiếu dài (chung cho mọi L)
+
+# ---------------------------------------------------------------- bài toán
+horizons:
+  main: 1                     # bài toán chính: Q_CĐ(t+1) (theo đề cương)
+  extended: 10                # bài toán mở rộng: Q_CĐ(t+1 … t+10)
+
+splits:
+  folds:
+    - {name: F1, train_end: 2020-12-31, val_start: 2021-01-01, val_end: 2021-12-31}
+    - {name: F2, train_end: 2021-12-31, val_start: 2022-01-01, val_end: 2022-12-31}
+    - {name: F3, train_end: 2023-12-31, val_start: 2024-01-01, val_end: 2024-12-31}
+  final: {name: FINAL, train_end: 2024-12-31, test_start: 2025-01-01}
+
+# ---------------------------------------------------------------- đặc trưng
+feature_groups:
+  base: [q_cd, mua_v1, mua_v1_3, mua_v1_7, mua_v1_15, mua_v2, mua_v2_3, mua_v2_7, mua_v2_15, doy_sin, doy_cos, cd_miss, cd_age]
+  hn_flags: [hn_miss, hn_age]
+  hn_repeat: [qhn_rep_flag, qhn_rep_len]
+
+feature_sets:               # tên thực nghiệm → các nhóm/biến (ghép theo thứ tự)
+  F0: [base]                                                         # E1: không Hủa Na
+  F1: [base, hn_qxa, hn_flags]                                       # E2: chỉ Q ra Hủa Na
+  F2: [base, hn_qden, hn_flags, hn_repeat]                           # E3: chỉ Q đến Hủa Na
+  F3: [base, hn_qxa, hn_qden, hn_mn, hn_flags, hn_repeat]            # E4: Q ra + Q đến + Z
+  F4: [base, hn_qxa, hn_qden, hn_mn, hn_qnm, hn_qtran, hn_gio, hn_flags, hn_repeat]   # phụ: đủ 6 biến
+  F5: [base, hn_qxa, hn_qden, hn_mn, hn_dmn, hn_bal, hn_ratio, hn_flags, hn_repeat]   # phụ: F3 + đặc trưng thủy văn
+  F1_EMA: [base, qcd_ema3, hn_qxa, hn_flags]                         # phụ: F1 + trung bình trượt mũ nhân quả của Q CĐ
+
+# ---------------------------------------------------------------- mô hình và lưới siêu tham số
+# Siêu tham số được dò một lần cho mỗi mô hình trên F1 (E2), hàm mất mát cơ bản, bài toán t+1;
+# sau đó dùng chung cho mọi thực nghiệm.
+models:
+  persistence: {}
+  ridge:
+    grid: {L: [3, 7, 14, 30], alpha: [0.1, 1, 10, 100, 1000]}
+  extra_trees:
+    fixed: {n_estimators: 300}
+    grid: {L: [3, 7, 14, 30], min_samples_leaf: [1, 5, 20], max_features: [0.3, 1.0]}
+  xgboost:
+    fixed: {learning_rate: 0.05, max_estimators: 2000, early_stopping: 50, subsample: 0.8, colsample_bytree: 0.8}
+    grid: {L: [3, 7, 14, 30], max_depth: [3, 6], min_child_weight: [1, 10]}
+  rnn:
+    grid: {L: [3, 7, 14, 30], hidden: [32, 64, 128], layers: [1, 2]}
+  lstm:
+    grid: {L: [3, 7, 14, 30], hidden: [32, 64, 128], layers: [1, 2]}
+  gru:
+    grid: {L: [3, 7, 14, 30], hidden: [32, 64, 128], layers: [1, 2]}
+
+deep:
+  dropout: 0.2
+  lr: 0.001
+  batch: 64
+  max_epochs: 200
+  patience: 20
+  huber_delta: 1.0
+
+seeds:
+  tune: [0, 1]               # dò siêu tham số
+  cv: [0, 1, 2]              # thực nghiệm trên 3 fold
+  final: [0, 1, 2, 3, 4]     # huấn luyện cuối 2019–2024
+
+# ---------------------------------------------------------------- hàm mất mát
+weights:                      # w = (1 + Q/Q95_train)^γ, chuẩn hoá trung bình = 1 trên train, có thể chặn trên
+  settings:
+    - {gamma: 1, cap: null}
+    - {gamma: 2, cap: null}
+    - {gamma: 1, cap: 20}
+    - {gamma: 2, cap: 20}
+penalty:                      # chỉ LSTM, GRU
+  lambda: [0.5, 1.0]
+
+# ---------------------------------------------------------------- gap selection
+gap_selection:
+  models: [lstm, gru]
+  hp: {L: 14, hidden: 64, layers: 1}
+  feature_set: F1
+
+# ---------------------------------------------------------------- đánh giá
+evaluation:
+  peak_quantile: 0.99         # đỉnh lũ test: cực đại địa phương ±7 ngày và Q > Q99 của train cuối
+  peak_halfwidth: 7
+  timing_window: 3            # sai số thời điểm đỉnh: tìm cực đại dự báo trong ±3 ngày
+bootstrap:
+  block: 30
+  n: 2000
+  seed: 0

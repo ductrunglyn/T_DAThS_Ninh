@@ -1,0 +1,12 @@
+# Chỉ đưa CODE lên GitHub. Dữ liệu và kết quả đưa lên Google Drive dạng .zip (README, mục 2.1).
+/data/
+/results/
+/results_fast/
+*.zip
+# Tài liệu luận văn (báo cáo, đề cương) và trình sinh phụ lục của nó chỉ để trên máy
+/docs/
+/experiments/build_docs.py
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/

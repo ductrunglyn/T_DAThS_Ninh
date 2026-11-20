@@ -1,0 +1,5 @@
+# Thư viện cài thêm trên Google Colab (ô đầu tiên của mọi notebook tự cài).
+# Colab đã có sẵn numpy, pandas, torch, matplotlib, PyYAML, joblib, openpyxl, pytest.
+# Cố định 2 thư viện này để nạp đúng weight đã lưu (.joblib) và cho kết quả giống bản gốc.
+scikit-learn==1.7.2
+xgboost==3.2.0
