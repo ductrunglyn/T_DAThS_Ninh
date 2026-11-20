@@ -13,7 +13,7 @@ Bài toán chính: dự báo Q đến Cửa Đạt ngày **t+1** từ thông tin
 | Nơi | Nội dung |
 |---|---|
 | GitHub [`ductrunglyn/T_DAThS_Ninh`](https://github.com/ductrunglyn/T_DAThS_Ninh) | Chỉ có code: các notebook, `src/`, `experiments/`, `tests/`. Notebook trên GitHub không kèm đầu ra. |
-| Google Drive | `Ninh_data.zip` (thư mục `data/`) và `Ninh_results.zip` (thư mục `results/`: kết quả và weight đã huấn luyện). |
+| Google Drive, thư mục [`T_DAThS_Ninh`](https://drive.google.com/drive/folders/1FOhh-bfsRCRbNZo3ljWV6eK_sTkj5zXc) | `Ninh_data.zip` (thư mục `data/`) và `Ninh_results.zip` (thư mục `results/`: kết quả và weight đã huấn luyện). |
 
 - Kết quả sinh lại được bằng cách chạy notebook 03–09.
 - Dữ liệu gốc `data/raw/` không sinh lại được, nên bắt buộc phải có `Ninh_data.zip`.
@@ -144,17 +144,19 @@ làm trùng dòng.
 
 ### 2.1 Google Colab
 
-Trên Colab, code được clone từ GitHub, còn dữ liệu và kết quả được giải nén từ Google Drive, cả hai vào **cùng một thư mục
-trên Drive**: `MyDrive/T_DAThS_Ninh/`. Kết quả vì vậy không mất khi tắt Colab, và mọi notebook dùng chung thư mục này.
+Trên Colab, code lấy từ GitHub, còn dữ liệu và kết quả giải nén từ file `.zip`. Cả hai nằm trong **cùng một thư mục trên
+Drive**: `MyDrive/T_DAThS_Ninh/`, cũng là thư mục chứa hai file `.zip`. Kết quả vì vậy không mất khi tắt Colab, và mọi
+notebook dùng chung thư mục này.
 
 **Chuẩn bị (làm một lần):**
 
-1. Tải hai file nén lên **My Drive** (thư mục gốc, giữ nguyên tên file):
+1. Trong My Drive có thư mục `T_DAThS_Ninh` ([link](https://drive.google.com/drive/folders/1FOhh-bfsRCRbNZo3ljWV6eK_sTkj5zXc)),
+   chứa hai file nén (giữ nguyên tên file):
 
    | File | Nội dung | Bắt buộc |
    |---|---|---|
    | `Ninh_data.zip` (~1 MB) | thư mục `data/`: dữ liệu gốc, bảng ngày, dữ liệu đóng băng v1 | có |
-   | `Ninh_results.zip` (~350 MB) | thư mục `results/`: 4 file kết quả gộp, weight tốt nhất, bảng, hình | không: thiếu thì chạy notebook 03–09 để sinh lại |
+   | `Ninh_results.zip` (~110 MB) | thư mục `results/`: 4 file kết quả gộp, weight tốt nhất, bảng, hình | không: thiếu thì chạy notebook 03–09 để sinh lại |
 
 2. Mở notebook 01 trên Colab, bằng một trong hai cách:
    - link trực tiếp: [01_PhanTich_XuLy_DuLieu.ipynb trên Colab](https://colab.research.google.com/github/ductrunglyn/T_DAThS_Ninh/blob/main/01_PhanTich_XuLy_DuLieu.ipynb);
@@ -162,8 +164,10 @@ trên Drive**: `MyDrive/T_DAThS_Ninh/`. Kết quả vì vậy không mất khi t
      `01_PhanTich_XuLy_DuLieu.ipynb`.
 3. **Runtime → Change runtime type → T4 GPU.**
 4. Chạy hai ô của **mục 0**:
-   - **ô 0a**: gắn Google Drive (Colab hỏi quyền truy cập, chọn cho phép), rồi `git clone` code về `MyDrive/T_DAThS_Ninh/`;
-   - **ô 0b**: giải nén `Ninh_data.zip` và `Ninh_results.zip` vào thư mục đó.
+   - **ô 0a**: gắn Google Drive (Colab hỏi quyền truy cập, chọn cho phép), rồi lấy code từ GitHub vào
+     `MyDrive/T_DAThS_Ninh/`, cạnh hai file `.zip`;
+   - **ô 0b**: giải nén `Ninh_data.zip` và `Ninh_results.zip` ngay trong thư mục đó, tạo ra `data/` và `results/`.
+   - Nếu thư mục `T_DAThS_Ninh` không nằm ngay trong My Drive, ô 0a tự tìm sâu hơn (tối đa 3 cấp).
 5. Chạy tiếp phần còn lại của notebook 01.
 
 **Các lần sau và các notebook khác:**
@@ -181,13 +185,20 @@ trên Drive**: `MyDrive/T_DAThS_Ninh/`. Kết quả vì vậy không mất khi t
 **Lưu ý:**
 - **Thư viện.** Colab có sẵn torch, numpy, pandas. Chỉ cài thêm scikit-learn 1.7.2 và xgboost 3.2.0 (đúng bản đã dùng) để nạp được
   weight Ridge-ARX, Extra Trees, XGBoost đã lưu.
-- **Sai lệch trên GPU khác.** RNN, LSTM, GRU huấn luyện lại trên GPU T4 cho kết quả lệch rất nhỏ so với kết quả đã lưu
-  (RTX 5090). Persistence, Ridge-ARX, Extra Trees, XGBoost cho kết quả như nhau.
+- **Sai lệch trên phần cứng khác** (kết quả đã lưu chạy trên RTX 5090):
+  - Persistence, Ridge-ARX, Extra Trees, XGBoost cho kết quả như nhau;
+  - chỉ test bằng weight đã lưu (notebook 10, mục 2): chỉ tiêu trùng tới 3 chữ số;
+  - huấn luyện lại RNN, LSTM, GRU thì lệch: thử LSTM-E2 trên CPU được NSE trung bình 0,517 (đã lưu 0,520), từng hạt giống
+    lệch tới 0,02. Chạy lại cả notebook 04–06 thì siêu tham số chọn theo CV cũng có thể khác;
+  - notebook 02 có thể chọn ngưỡng G khác (trên CPU chọn G = 7), nhưng vẫn giữ bộ dữ liệu đóng băng v1 (G = 3) và in cảnh báo.
+  - Số liệu của luận văn là kết quả trong `Ninh_results.zip`.
 - **Ghi đè kết quả.** Chạy lại notebook 03–09 sẽ ghi đè `results/` trên Drive. Muốn quay về kết quả gốc: đặt `GHI_DE = True` ở
   ô 0b rồi chạy lại ô đó.
 - **Cập nhật code.** Chạy lại ô 0a để lấy code mới nhất từ GitHub (`git pull`).
-- **Đặt dự án chỗ khác trên Drive.** Sửa `DU_AN` ở ô 0a, 0b và ô đầu tiên của các notebook. Ô đầu tiên cũng tự tìm thư mục
-  dự án trong My Drive, sâu tối đa 3 cấp.
+- **Đặt dự án chỗ khác trên Drive.** Sửa `DU_AN` ở ô 0a và ở ô đầu tiên của các notebook. Ô đầu tiên cũng tự tìm thư mục dự
+  án trong My Drive, sâu tối đa 3 cấp.
+- **Thư mục được chia sẻ từ tài khoản khác.** Chuột phải vào thư mục → **Organize → Add shortcut → My Drive**, để nó xuất
+  hiện trong `MyDrive/`.
 
 ### 2.2 Máy cá nhân (conda)
 
@@ -244,8 +255,10 @@ python -m pytest -q tests/          # 59 passed
 
 **Chạy không có GPU:**
 - Mã tự dùng CPU khi không có GPU, chậm hơn vài lần.
-- Kết quả của RNN, LSTM, GRU sẽ lệch rất nhỏ so với kết quả đã lưu (chạy trên GPU), cỡ dưới 0,1 % giá trị dự báo.
 - Ridge-ARX, Extra Trees, XGBoost cho kết quả như nhau.
+- RNN, LSTM, GRU:
+  - nạp weight đã lưu và dự báo: lệch dưới 1 m³/s;
+  - huấn luyện lại: NSE từng hạt giống lệch tới khoảng 0,02 so với kết quả đã lưu (xem mục 2.1, phần lưu ý).
 
 ---
 
@@ -330,7 +343,8 @@ Chọn kernel **Python 3** của môi trường MTL.
 
 ### 5.2 Xem kết quả có sẵn (không cần chạy)
 
-Mọi notebook đã được chạy và **lưu sẵn đầu ra**. Chỉ cần mở file và kéo xuống, **không bấm Run**:
+Bản trên máy: mọi notebook đã được chạy và **lưu sẵn đầu ra**. Chỉ cần mở file và kéo xuống, **không bấm Run**.
+Bản trên GitHub không kèm đầu ra; trên Colab, mở notebook rồi chạy (cần `Ninh_results.zip` để có kết quả mà không phải huấn luyện):
 
 | Muốn xem | Mở notebook | Mục |
 |---|---|---|
@@ -376,7 +390,7 @@ Mỗi notebook mô hình (03–06) làm theo cùng 5 bước, mỗi bước mộ
 Mục 7 giải thích chi tiết từng bước.
 
 > **Lưu ý.**
-> - Chạy lại notebook 02–06, 08, 09 sẽ **ghi đè** kết quả chính trong `results/`. Trên cùng GPU, kết quả trùng hoàn toàn với lần chạy trước. Đã kiểm tra: 224 file kết quả trùng khớp sau khi chạy lại 03–06.
+> - Chạy lại notebook 02–06, 08, 09 sẽ **ghi đè** kết quả chính trong `results/`. Trên cùng GPU, kết quả trùng hoàn toàn với lần chạy trước. Đã kiểm tra ngày 20/11/2026: chạy lại toàn bộ 01–10, mọi chỉ tiêu, dự báo, lưới siêu tham số và cấu hình chọn trùng bản trước.
 > - Chỉ muốn thử một kịch bản mà không đụng kết quả chính thì dùng notebook 10.
 > - Sau khi chạy lại 03–06 hoặc 09, nên chạy lại 07 để cập nhật bảng so sánh.
 
@@ -595,7 +609,7 @@ python experiments/build_notebooks.py --only 10
 | VS Code không thấy kernel MTL | Cài extension Python và Jupyter; `Ctrl+Shift+P` → "Python: Select Interpreter" → chọn `~/miniconda3/envs/MTL/bin/python`; bấm lại Select Kernel. |
 | `ModuleNotFoundError: No module named 'src'` | Kernel không phải MTL, hoặc notebook nằm ngoài thư mục dự án. Mở notebook ở thư mục gốc `BacSon/Ninh/`, chọn kernel MTL. |
 | (Colab) `Chưa có dự án trên Google Drive` | Chưa chạy mục 0 của notebook 01: mở notebook 01, chạy ô 0a, 0b. |
-| (Colab) `Không thấy /content/drive/MyDrive/Ninh_data.zip` | Tải `Ninh_data.zip` lên thư mục gốc My Drive, giữ đúng tên; hoặc sửa đường dẫn `FILE_NEN` ở ô 0b. |
+| (Colab) `Không thấy …/T_DAThS_Ninh/Ninh_data.zip` | Tải `Ninh_data.zip` vào thư mục `T_DAThS_Ninh` trên Drive, giữ đúng tên; hoặc sửa `FILE_NEN` ở ô 0b. |
 | (Colab) ô đầu in `Thiết bị: CPU` | Runtime → Change runtime type → T4 GPU, rồi chạy lại từ ô đầu. |
 | (Colab) ô 0a in `Không cập nhật được (có file đã sửa trên Drive)` | Notebook trên Drive đã được lưu kèm đầu ra hoặc đã sửa. Muốn bỏ thay đổi và lấy bản mới: `!git -C /content/drive/MyDrive/T_DAThS_Ninh checkout -- .` rồi chạy lại ô 0a. |
 | (Colab) lỗi khi nạp weight `.joblib` | Thư viện chưa đúng phiên bản: Runtime → Restart session, rồi chạy lại từ ô đầu (ô này cài `requirements_colab.txt` trước khi nạp thư viện). |

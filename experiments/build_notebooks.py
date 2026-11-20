@@ -68,41 +68,47 @@ ngày thiếu (NaN) cùng cờ thiếu; mọi bước tiền xử lý cho mô h�
 Mã nguồn: `src/data/quality_control.py`."""),
      md(r"""## 0. Chuẩn bị trên Google Colab (chạy trên máy thì bỏ qua mục này)
 
-Code lấy từ GitHub, còn dữ liệu và kết quả lấy từ Google Drive. Cả hai được đặt vào **cùng một thư mục trên Drive**
-(`MyDrive/T_DAThS_Ninh`), nên kết quả không mất khi tắt Colab và các notebook 02–10 dùng chung thư mục này.
+Code lấy từ GitHub, còn dữ liệu và kết quả lấy từ Google Drive. Cả hai nằm trong **cùng một thư mục trên Drive**,
+`MyDrive/T_DAThS_Ninh`. Nhờ vậy kết quả không mất khi tắt Colab, và các notebook 02–10 dùng chung thư mục này.
 
-1. Tải hai file nén lên **My Drive** (thư mục gốc):
+1. Trong My Drive có thư mục `T_DAThS_Ninh` chứa hai file nén:
    - `Ninh_data.zip` (bắt buộc): chứa thư mục `data/`;
-   - `Ninh_results.zip` (không bắt buộc): chứa thư mục `results/` (kết quả và weight đã huấn luyện). Không có file này thì
-     kết quả được sinh ra khi chạy notebook 03–09.
+   - `Ninh_results.zip` (không bắt buộc): chứa thư mục `results/`, gồm kết quả và weight đã huấn luyện. Không có file này
+     thì kết quả được sinh ra khi chạy notebook 03–09.
 2. **Runtime → Change runtime type → GPU (T4)**.
-3. Chạy ô 0a (lấy code), ô 0b (giải nén), rồi chạy tiếp các ô bên dưới như bình thường.
+3. Chạy ô 0a (lấy code từ GitHub vào thư mục đó), rồi ô 0b (giải nén), rồi chạy tiếp các ô bên dưới như bình thường.
 
 Chỉ cần làm mục này **một lần**. Các notebook khác chỉ cần mở và chạy: ô đầu tiên của chúng tự gắn Drive và tìm thư mục dự án."""),
      code(r"""# ── 0a. (Colab) Lấy code từ GitHub về Google Drive. Chạy trên máy thì tự bỏ qua. ──
-import os, sys, subprocess
+import os, sys, glob, subprocess
 REPO  = 'https://github.com/ductrunglyn/T_DAThS_Ninh.git'
-DU_AN = '/content/drive/MyDrive/T_DAThS_Ninh'          # thư mục dự án trên Drive: code + data/ + results/
+DU_AN = '/content/drive/MyDrive/T_DAThS_Ninh'      # thư mục trên Drive chứa 2 file .zip; code được lấy về cùng chỗ này
 if 'google.colab' in sys.modules:
     from google.colab import drive
     drive.mount('/content/drive')
-    if os.path.isdir(os.path.join(DU_AN, '.git')):      # đã clone trước đó → cập nhật code mới nhất
+    if not os.path.isdir(DU_AN):                       # không có ngay trong My Drive → tìm sâu hơn (tối đa 3 cấp)
+        hit = sorted(glob.glob('/content/drive/MyDrive/*/T_DAThS_Ninh') + glob.glob('/content/drive/MyDrive/*/*/T_DAThS_Ninh'))
+        DU_AN = hit[0] if hit else DU_AN
+    if os.path.isdir(os.path.join(DU_AN, '.git')):      # đã lấy code trước đó → cập nhật code mới nhất
         r = subprocess.run(['git', '-C', DU_AN, 'pull', '--ff-only'], capture_output=True, text=True)
         print(r.stdout or r.stderr)
         if r.returncode:
             print('Không cập nhật được (có file đã sửa trên Drive): giữ nguyên code hiện tại.')
     elif os.path.isdir(os.path.join(DU_AN, 'src')):     # thư mục dự án chép tay lên Drive, không phải bản clone
         print('Đã có code ở', DU_AN, '(không phải bản clone): dùng luôn.')
-    else:
-        subprocess.run(['git', 'clone', REPO, DU_AN], check=True)
+    else:                                               # lấy code về (thư mục có thể đã chứa sẵn các file .zip)
+        os.makedirs(DU_AN, exist_ok=True)
+        for lenh in (['init', '-q'], ['remote', 'add', 'origin', REPO], ['fetch', '-q', 'origin', 'main'],
+                     ['checkout', '-q', '-B', 'main', '--track', 'origin/main']):
+            subprocess.run(['git', *lenh], cwd=DU_AN, check=True)
     os.chdir(DU_AN)
     print('Thư mục dự án:', DU_AN); print(sorted(os.listdir(DU_AN)))
 else:
     print('Không chạy trên Colab: bỏ qua.')"""),
      code(r"""# ── 0b. (Colab) Giải nén data và kết quả (file .zip đã tải lên Drive) vào thư mục dự án. Chạy trên máy thì tự bỏ qua. ──
 import zipfile
-FILE_NEN = {'data':    '/content/drive/MyDrive/Ninh_data.zip',       # bắt buộc
-            'results': '/content/drive/MyDrive/Ninh_results.zip'}    # không bắt buộc
+FILE_NEN = {'data':    os.path.join(DU_AN, 'Ninh_data.zip'),       # bắt buộc
+            'results': os.path.join(DU_AN, 'Ninh_results.zip')}    # không bắt buộc
 GHI_DE = False      # True: giải nén lại dù thư mục đã có (ghi đè các file cùng tên)
 if 'google.colab' in sys.modules:
     for ten, f in FILE_NEN.items():
@@ -116,7 +122,7 @@ if 'google.colab' in sys.modules:
                 z.extractall(DU_AN if ca_thu_muc else dich, members=ds)
             print(f'Đã giải nén {f} → {dich}')
         elif ten == 'data':
-            raise FileNotFoundError(f'Không thấy {f}: tải Ninh_data.zip lên My Drive, hoặc sửa đường dẫn trong FILE_NEN.')
+            raise FileNotFoundError(f'Không thấy {f}: tải Ninh_data.zip vào thư mục {DU_AN} trên Drive, hoặc sửa FILE_NEN.')
         else:
             print(f'Không thấy {f}: bỏ qua. Kết quả sẽ được sinh ra khi chạy notebook 03–09.')
 else:
@@ -363,7 +369,18 @@ G ∈ {1, 3, 7} được chọn **một lần cho mọi mô hình** bằng CV 3 
 toán t+1). Để so sánh công bằng, mọi G được chấm trên **cùng** các mẫu val hợp lệ với cả ba ngưỡng (giao)."""),
      code(r"""gap_tab, G, gmean = pipeline.select_gap(cfg)
 display(gap_tab.round(3)); gap_tab.to_csv(OUT / 'chon_nguong_khoang_thieu.csv', index=False, encoding='utf-8-sig')
-print('NSE CV trung bình (LSTM, GRU) theo G:', gmean.round(4).to_dict(), '→ chọn G =', G)"""),
+print('NSE CV trung bình (LSTM, GRU) theo G:', gmean.round(4).to_dict(), '→ chọn G =', G)
+# Đã có bộ dữ liệu đóng băng → giữ nguyên G của nó (manifest), không chọn lại
+from src.data.freeze import frozen_dir
+mf = frozen_dir(cfg) / 'manifest.json'
+if mf.exists():
+    G_dong_bang = json.loads(mf.read_text(encoding='utf-8'))['max_gap']
+    if G != G_dong_bang:
+        print(f'⚠ Lần chạy này chọn G = {G}, khác G = {G_dong_bang} của bộ dữ liệu đã đóng băng {cfg["dataset_version"]}.\n'
+              '  NSE CV giữa các G chênh rất ít, và RNN/LSTM/GRU cho kết quả hơi khác trên GPU/CPU khác, nên lựa chọn có thể đổi.\n'
+              f'  Giữ nguyên bộ dữ liệu đã đóng băng (G = {G_dong_bang}). Muốn dùng G mới thì tạo phiên bản dữ liệu mới (dataset_version).')
+    G = G_dong_bang
+print('G dùng cho bộ dữ liệu:', G)"""),
      md(r"""## 2. Đặc trưng và các tập biến"""),
      code(r"""ds = {H: UnifiedDataset(cfg, H, G, daily) for H in (cfg['horizons']['main'], cfg['horizons']['extended'])}
 d1 = ds[cfg['horizons']['main']]
